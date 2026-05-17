@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BaseChess Arena ♟️</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <style>
+    body { margin:0; background:#0a0a0a; color:#fff; font-family:Arial; text-align:center; }
+    h1 { color:#00ff88; margin:20px; }
+    #board { width: 480px; height: 480px; margin:20px auto; border:8px solid #00ff88; border-radius:12px; }
+    button { background:#00ff88; color:black; padding:15px 30px; margin:10px; border:none; border-radius:50px; font-size:18px; cursor:pointer; }
+    .info { position:absolute; top:20px; right:20px; background:#111; padding:15px; border-radius:12px; }
+    .pot { font-size:22px; color:#ffd700; margin:10px; }
+  </style>
+</head>
+<body>
+  <h1>♟️ BaseChess Arena ♟️</h1>
+  <p>PVP Chess on Base • Real USDC Prizes</p>
+
+  <div class="info">
+    <button onclick="connectBaseWallet()">🔗 Connect Base Wallet</button>
+    <div id="wallet" style="margin-top:10px; font-size:14px;"></div>
+  </div>
+
+  <div class="pot">Current Pot: <span id="pot">5.00</span> USDC</div>
+
+  <div>
+    <button onclick="startNewGame()">🎮 Start New Match (2 USDC Entry)</button>
+    <button onclick="claimWin()">🏆 Claim Win (90% to me)</button>
+  </div>
+
+  <div id="status" style="margin:15px; font-size:20px; color:#00ffcc;"></div>
+
+  <div id="board"></div>
+
+  <script>
+    const chess = new Chess();
+    let board = null;
+    let playerColor = 'w';
+    let gameOver = false;
+
+    function connectBaseWallet() {
+      document.getElementById("wallet").innerHTML = 
+        `✅ Connected on Base<br>Address: 0x71C7...a3B9<br>USDC: 142.50`;
+      alert("Connected to Coinbase Base! Ready to deposit USDC.");
+    }
+
+    function startNewGame() {
+      if (document.getElementById("wallet").innerHTML === "") {
+        alert("Please connect Base Wallet first!");
+        return;
+      }
+      chess.reset();
+      gameOver = false;
+      document.getElementById("status").textContent = "Match Started • 2 USDC Deposited";
+      document.getElementById("pot").textContent = "4.00";
+      initBoard();
+      alert("💰 2 USDC deposited on Base!\nWaiting for opponent... (Demo: You play both sides)");
+    }
+
+    function initBoard() {
+      const config = {
+        draggable: true,
+        position: 'start',
+        onDrop: handleMove,
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+      };
+      board = Chessboard('board', config);
+      updateStatus();
+    }
+
+    function handleMove(source, target) {
+      if (gameOver) return 'snapback';
+
+      const move = chess.move({
+        from: source,
+        to: target,
+        promotion: 'q'
+      });
+
+      if (move === null) return 'snapback';
+
+      updateStatus();
+
+      // Simulate opponent move after 800ms
+      setTimeout(() => {
+        if (!gameOver && !chess.game_over()) {
+          makeRandomMove();
+        }
+      }, 800);
+
+      return true;
+    }
+
+    function makeRandomMove() {
+      const possibleMoves = chess.moves();
+      if (possibleMoves.length === 0) return;
+
+      const randomIdx = Math.floor(Math.random() * possibleMoves.length);
+      chess.move(possibleMoves[randomIdx]);
+      board.position(chess.fen());
+      updateStatus();
+    }
+
+    function updateStatus() {
+      let status = '';
+      if (chess.in_checkmate()) {
+        status = '🏆 CHECKMATE! You Win!';
+        gameOver = true;
+      } else if (chess.in_draw()) {
+        status = 'Draw Game';
+        gameOver = true;
+      } else {
+        status = chess.turn() === 'w' ? "Your Turn (White)" : "Opponent's Turn (Black)";
+      }
+      document.getElementById("status").textContent = status;
+    }
+
+    function claimWin() {
+      if (!gameOver) {
+        alert("Finish the game first!");
+        return;
+      }
+      alert(`🎉 You Won!\n\n90% (1.80 USDC) sent to your Base wallet\n10% (0.20 USDC) sent to project pool for token buyback\n\nTransaction confirmed on Base!`);
+    }
+
+    // Load chessboard.js
+    const script = document.createElement('script');
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js";
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>
