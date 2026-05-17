@@ -16,65 +16,21 @@
       text-align: center;
       min-height: 100vh;
     }
-    h1 {
-      color: #006400;
-      text-shadow: 0 0 15px #00cc00;
-      margin: 20px;
-      font-size: 2.3em;
-    }
-    .header {
-      background: #f0e6d2;
-      padding: 20px;
-      border-bottom: 6px solid #006400;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    #board {
-      width: 520px;
-      height: 520px;
-      margin: 25px auto;
-      border: 14px solid #8B5A2B;
-      border-radius: 8px;
-      box-shadow: 0 0 40px #006400, inset 0 0 30px rgba(139,90,43,0.4);
+    h1 { color: #006400; text-shadow: 0 0 15px #00cc00; margin: 20px; font-size: 2.3em; }
+    .header { background: #f0e6d2; padding: 20px; border-bottom: 6px solid #006400; }
+    #board { 
+      width: 520px; height: 520px; margin: 25px auto; 
+      border: 14px solid #8B5A2B; border-radius: 8px;
+      box-shadow: 0 0 40px #006400;
     }
     button {
-      background: #006400;
-      color: white;
-      padding: 16px 34px;
-      margin: 12px;
-      border: none;
-      border-radius: 50px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 6px 15px rgba(0,100,0,0.4);
+      background: #006400; color: white; padding: 16px 34px; margin: 12px;
+      border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer;
     }
-    button:hover {
-      background: #00aa00;
-      transform: scale(1.05);
-    }
-    .pot {
-      font-size: 28px;
-      color: #b8860b;
-      margin: 15px;
-      font-weight: bold;
-    }
-    .status {
-      font-size: 21px;
-      min-height: 70px;
-      color: #006400;
-      margin: 15px;
-      font-weight: bold;
-    }
-    .info {
-      position: absolute;
-      top: 25px;
-      right: 25px;
-      background: white;
-      padding: 18px;
-      border-radius: 16px;
-      border: 3px solid #006400;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    }
+    button:hover { background: #00aa00; transform: scale(1.05); }
+    .pot { font-size: 28px; color: #b8860b; margin: 15px; font-weight: bold; }
+    .status { font-size: 21px; min-height: 70px; color: #006400; margin: 15px; font-weight: bold; }
+    .info { position: absolute; top: 25px; right: 25px; background: white; padding: 18px; border-radius: 16px; border: 3px solid #006400; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
   </style>
 </head>
 <body>
@@ -92,14 +48,14 @@
 
   <button onclick="startMatch()">🎮 Start New Match (2 USDC Deposit)</button>
 
-  <div class="status" id="status">Ready to Play? Connect wallet & start match</div>
+  <div class="status" id="status">Ready? Connect wallet and start match</div>
 
   <div id="board"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
   <script>
-    let chess = new Chess();
+    let chessGame = null;
     let board = null;
     let gameActive = false;
 
@@ -107,67 +63,69 @@
       document.getElementById("walletInfo").innerHTML = `
         ✅ Connected on <strong>Base</strong><br>
         0x71C7...a3B9<br>
-        <span style="color:#006400">USDC Balance: 245.80</span>
+        <span style="color:#006400">USDC: 245.80</span>
       `;
-      alert("✅ Successfully connected to Coinbase Base!");
     }
 
     function startMatch() {
       if (!document.getElementById("walletInfo").innerHTML) {
-        alert("Please connect your Base Wallet first!");
+        alert("Please connect Base Wallet first!");
         return;
       }
-      
-      chess.reset();
+
+      chessGame = new Chess();
       gameActive = true;
       document.getElementById("pot").textContent = "4.00";
-      document.getElementById("status").innerHTML = "🎯 Match Started • You are <strong>White</strong>";
+      document.getElementById("status").innerHTML = "🎯 Match Started • You are White";
 
-      const config = {
-        draggable: true,
-        position: 'start',
-        onDrop: handleMove,
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-      };
+      // Wait until chessboard.js is fully loaded
+      setTimeout(() => {
+        const config = {
+          draggable: true,
+          position: 'start',
+          onDrop: handleMove,
+          pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+        };
+        board = Chessboard('board', config);
+      }, 300);
       
-      board = Chessboard('board', config);
-      alert("💰 2 USDC deposited on Base!\n\nPlay against AI opponent. Win = 90% prize to you!");
+      alert("💰 2 USDC deposited on Base!\nPlay against AI. Good Luck!");
     }
 
     function handleMove(source, target) {
-      if (!gameActive) return 'snapback';
+      if (!gameActive || !chessGame) return 'snapback';
 
-      const move = chess.move({ from: source, to: target, promotion: 'q' });
+      const move = chessGame.move({ from: source, to: target, promotion: 'q' });
       if (move === null) return 'snapback';
 
-      document.getElementById("status").textContent = "🤖 Opponent is thinking...";
+      document.getElementById("status").textContent = "🤖 Opponent thinking...";
 
       setTimeout(() => {
-        if (chess.game_over()) endGame();
+        if (chessGame.game_over()) endGame();
         else makeAIMove();
-      }, 650);
+      }, 700);
       return true;
     }
 
     function makeAIMove() {
-      const moves = chess.moves();
+      const moves = chessGame.moves();
       if (moves.length === 0) return;
 
       const randomMove = moves[Math.floor(Math.random() * moves.length)];
-      chess.move(randomMove);
-      board.position(chess.fen());
+      chessGame.move(randomMove);
+      board.position(chessGame.fen());
 
-      if (chess.game_over()) endGame();
+      if (chessGame.game_over()) endGame();
       else document.getElementById("status").innerHTML = "Your Turn (White)";
     }
 
     function endGame() {
       gameActive = false;
-      if (chess.in_checkmate()) {
+      if (chessGame.in_checkmate()) {
         document.getElementById("status").innerHTML = "🏆 CHECKMATE! YOU WIN!";
-        alert("🎉 YOU WON THE MATCH!\n\n90% of pot (3.60 USDC) sent to your Base wallet\n10% (0.40 USDC) sent to project pool for token buyback\n\nTransaction confirmed on Base! ♟️");
+        alert("🎉 YOU WON!\n\n90% of pot (3.60 USDC) → Your Wallet\n10% (0.40 USDC) → Project Pool (Token Buyback)\n\nTx confirmed on Base!");
       } else {
-        document.getElementById("status").textContent = "Game Over - Draw";
+        document.getElementById("status").textContent = "Game Over";
       }
     }
   </script>
